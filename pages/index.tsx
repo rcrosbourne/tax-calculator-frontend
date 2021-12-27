@@ -2,8 +2,8 @@ import { Popover } from "@headlessui/react";
 import type { NextPage } from "next";
 import Head from "next/head";
 import Image from "next/image";
-import { useState } from "react";
-
+import { useEffect, useState } from "react";
+import { useQuery } from "react-query";
 const user = {
   name: "Tom Cook",
   email: "tom@example.com",
@@ -45,9 +45,51 @@ const Home: NextPage = () => {
     pensionValue: "",
   };
   const [data, setData] = useState<inputType>(initialValues);
+  const [totalEarnings, setTotalEarnings] = useState<number>(0);
   const onSubmit = (e: any) => {
-    console.log("submit", e);
+    e.preventDefault();
   };
+  const {
+    isLoading,
+    isError,
+    data: taxData,
+    error,
+  } = useQuery(["tax", data], async () => {
+    let submitData = {} as inputType;
+    submitData.pensionValue = data.pensionValue ? data.pensionValue : "0.00";
+    submitData.monthlyGross = data.monthlyGross ? data.monthlyGross : "0.00";
+    submitData.otherIncome = data.otherIncome ? data.otherIncome : "0.00";
+    submitData.otherDeductions = data.otherDeductions
+      ? data.otherDeductions
+      : "0.00";
+    submitData.otherExpenses = data.otherExpenses ? data.otherExpenses : "0.00";
+    submitData.pensionType = data.pensionType ? data.pensionType : "PERCENTAGE";
+
+    const response = await fetch(`http://127.0.0.1:8000/api/calculate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(submitData),
+    });
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+    return response.json();
+  });
+  useEffect(() => {
+    let total = 0;
+    const { monthlyGross, otherIncome } = data;
+    const gross = parseFloat(monthlyGross) || 0;
+    const otherIncomeValue = parseFloat(otherIncome) || 0;
+    total += gross;
+    total += otherIncomeValue;
+    setTotalEarnings(total);
+  }, [data, data.monthlyGross, data.otherIncome]);
+
+  useEffect(() => {}, [data]);
+
   return (
     <div className="min-h-full">
       <Popover as="header" className="pb-24 bg-indigo-600">
@@ -326,12 +368,12 @@ const Home: NextPage = () => {
                           >
                             Reset
                           </button>
-                          <button
-                            type="submit"
+                          <a
+                            href="#tax-results"
                             className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                           >
                             Calculate
-                          </button>
+                          </a>
                         </div>
                       </div>
                     </form>
@@ -341,7 +383,7 @@ const Home: NextPage = () => {
             </div>
 
             {/* Right column */}
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 gap-4" id="tax-results">
               <section aria-labelledby="section-2-title">
                 <h2 className="sr-only" id="section-2-title">
                   Section title
@@ -366,7 +408,8 @@ const Home: NextPage = () => {
                             Total Earnings
                           </dt>
                           <dd className="text-sm font-medium text-gray-900">
-                            {/* ${breakdown?.totalEarnings || "0.00"} */}
+                            ${taxData?.breakdown?.totalEarnings}
+                            {/* {totalEarnings} */}
                           </dd>
                         </div>
                         <div className="border-t border-gray-200 pt-4 flex items-center justify-between">
@@ -378,7 +421,7 @@ const Home: NextPage = () => {
                             ></a>
                           </dt>
                           <dd className="text-sm font-medium text-red-900">
-                            {/* (${breakdown?.nationalInsuranceScheme}) */}
+                            (${taxData?.breakdown?.nationalInsuranceScheme})
                           </dd>
                         </div>
                         <div className="border-t border-gray-200 pt-4 flex items-center justify-between">
@@ -390,7 +433,12 @@ const Home: NextPage = () => {
                             ></a>
                           </dt>
                           <dd className="text-sm font-medium text-red-900">
-                            {/* (${breakdown?.voluntaryDeductions?.pensionAmount}) */}
+                            ($
+                            {
+                              taxData?.breakdown?.voluntaryDeductions
+                                ?.pensionAmount
+                            }
+                            )
                           </dd>
                         </div>
                         <div className="border-t border-gray-200 pt-4 flex items-center justify-between">
@@ -402,7 +450,7 @@ const Home: NextPage = () => {
                             ></a>
                           </dt>
                           <dd className="text-sm font-medium text-red-900">
-                            {/* (${breakdown?.educationTax}) */}
+                            (${taxData?.breakdown?.educationTax})
                           </dd>
                         </div>
                         <div className="border-t border-gray-200 pt-4 flex items-center justify-between">
@@ -414,7 +462,7 @@ const Home: NextPage = () => {
                             ></a>
                           </dt>
                           <dd className="text-sm font-medium text-red-900">
-                            {/* (${breakdown?.nationalHousingTrust}) */}
+                            (${taxData?.breakdown?.nationalHousingTrust})
                           </dd>
                         </div>
                         <div className="border-t border-gray-200 pt-4 flex items-center justify-between">
@@ -426,7 +474,7 @@ const Home: NextPage = () => {
                             ></a>
                           </dt>
                           <dd className="text-sm font-medium text-red-900">
-                            {/* (${breakdown?.incomeTax}) */}
+                            (${taxData?.breakdown?.incomeTax})
                           </dd>
                         </div>
                         <div className="border-t border-gray-200 pt-4 flex items-center justify-between">
@@ -438,7 +486,12 @@ const Home: NextPage = () => {
                             ></a>
                           </dt>
                           <dd className="text-sm font-medium text-red-900">
-                            {/* (${breakdown?.voluntaryDeductions?.deductions}) */}
+                            ($
+                            {
+                              taxData?.breakdown?.voluntaryDeductions
+                                ?.deductions
+                            }
+                            )
                           </dd>
                         </div>
                         <div className="border-t border-gray-200 pt-4 flex items-center justify-between">
@@ -451,7 +504,7 @@ const Home: NextPage = () => {
 
                       <div className="mt-6">
                         <div className="text-center w-full bg-indigo-600 border border-transparent rounded-md shadow-sm py-3 px-4 text-2xl md:text-3xl font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-50 focus:ring-indigo-500">
-                          {/* ${breakdown?.netMonthlyIncome} */}
+                          ${taxData?.breakdown?.netMonthlyIncome}
                         </div>
                       </div>
                     </section>

@@ -1,5 +1,9 @@
 @import url("https://fonts.googleapis.com/css2?family=Island+Moments&display=swap");
 
+html {
+  scroll-behavior: smooth;
+}
+
 /*
 ! tailwindcss v3.0.7 | MIT License | https://tailwindcss.com
 */
