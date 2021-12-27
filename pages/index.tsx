@@ -27,7 +27,7 @@ function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(" ");
 }
 
-interface inputType {
+export interface inputType {
   monthlyGross: string;
   otherIncome: string;
   otherExpenses: string;
@@ -65,7 +65,7 @@ const Home: NextPage = () => {
     submitData.otherExpenses = data.otherExpenses ? data.otherExpenses : "0.00";
     submitData.pensionType = data.pensionType ? data.pensionType : "PERCENTAGE";
 
-    const response = await fetch(`http://127.0.0.1:8000/api/calculate`, {
+    const response = await fetch(`/api/calculate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
