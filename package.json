@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:css\" \"next dev\"",
     "dev:css": "tailwindcss -i ./styles/globals.css -o ./styles/tailwind.css --watch",
-    "build": "next build",
+    "build": "concurrently \"npm run build:css\" \"next build\"",
+    "build:css": "tailwindcss -i ./styles/globals.css -o ./styles/tailwind.css --minify",
     "start": "next start",
     "lint": "next lint"
   },
